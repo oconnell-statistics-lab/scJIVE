@@ -1,3 +1,4 @@
+useDynLib(scJIVE, .registration=TRUE)
 exportPattern("^[[:alpha:]]+")
 export("jive")
 S3method(print,jive)
@@ -7,3 +8,4 @@ import("gplots","abind")
 importFrom("graphics", "barplot", "image", "layout", "layout.show",
              "legend", "par", "plot", "plot.new", "text")
 importFrom("stats", "dist", "hclust", "quantile", "sd","runif")
+importFrom(Rcpp, evalCpp)
