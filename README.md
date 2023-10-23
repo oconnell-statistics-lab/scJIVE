@@ -12,7 +12,7 @@ Joseph Hastings <hastinjw@miamioh.edu>, Donghyung Lee <leed13@miamioh.edu>, Mich
 
 ## scJIVE Installation
 
-You can install the development version of gauss from GitHub with:
+You can install the development version of scJIVE from GitHub with:
 
 ``` r
 # install.packages("devtools")
