@@ -1,7 +1,7 @@
 // [[Rcpp::depends(RcppArmadillo, RcppEigen)]]
 // [[Rcpp::plugins(openmp)]]
 
-#include <omp.h>
+//#include <omp.h>
 #include <RcppArmadillo.h>
 #include <RcppEigen.h>
 
