@@ -1,7 +1,7 @@
 jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm", 
                   dnames = names(data), conv = "default", maxiter = 1000, 
                   scale = TRUE, center = TRUE, orthIndiv = TRUE, est = TRUE, 
-                  showProgress = TRUE, cores = 1)
+                  showProgress = TRUE, cores = 1) {
 
    # Get the number of data sets
    l <- length(data)
@@ -27,7 +27,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
      } else {
        temp <- eigenBDCSVD(data[[i]], n_cores = 8)
      }
-     data[[i]] <- eigenMapMatMult2(eigenMapMatMult2(temp$u, diag(x = temp$d), n_cores = CORES), 
+     data[[i]] <- eigenMapMatMult2(eigenMapMatMult2(temp$u, diag(x = temp$d), n_cores = cores), 
                                    t(temp$v), n_cores = cores)
      toc(quiet = !showProgress)
    }
@@ -72,7 +72,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
           if(nrow(data[[i]]) > ncol(data[[i]])) {
             temp <- eigenBDCSVD(data[[i]], n_cores = cores)
             data[[i]] <- eigenMapMatMult2(diag(x = temp$d[1:ncol(data[[1]])], nrow = ncol(data[[1]])), 
-                                          t(temp$v[, 1:ncol(data[[1]])]), n_cores = CORES)
+                                          t(temp$v[, 1:ncol(data[[1]])]), n_cores = cores)
             u[[i]] <- temp$u
           } else {
             # Set u[[i]] to identity matrix
@@ -91,8 +91,8 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
      individual <- temp$individual
      if (est) {
        for (i in 1:l) {
-         joint[[i]] <- eigenMapMatMult2(u[[i]], joint[[i]], n_cores = CORES)
-         individual[[i]] <- eigenMapMatMult2(u[[i]], individual[[i]], n_cores = CORES)
+         joint[[i]] <- eigenMapMatMult2(u[[i]], joint[[i]], n_cores = cores)
+         individual[[i]] <- eigenMapMatMult2(u[[i]], individual[[i]], n_cores = cores)
        }
      }
    } else if (method=="perm") {
@@ -163,6 +163,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
    
    class(result) <- "jive"
    return(result)
+
 }
 
 
