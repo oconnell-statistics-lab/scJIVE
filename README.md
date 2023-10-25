@@ -16,7 +16,7 @@ You can install the development version of scJIVE from GitHub with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("dleelab/scJIVE")
+devtools::install_github("oconnell-statistics-lab/scJIVE")
 ```
 
 
