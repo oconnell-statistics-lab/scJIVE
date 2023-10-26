@@ -288,7 +288,7 @@ pjsum <- function (dim,rank) {
 # Determine ranks with bic
 bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)), 
                       d=unlist(lapply(data,nrow)), conv=.000001, maxiter=1000, 
-                      orthIndiv=TRUE, showProgress=TRUE, cores=cores) {
+                      orthIndiv=TRUE, showProgress=TRUE, cores=1) {
    # Get the number of data sets
    l <- length(data)
 
@@ -362,7 +362,7 @@ bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)
 
 # Determine ranks by a permutation test
 jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, maxiter=1000,
-                       orthIndiv=TRUE, showProgress=TRUE, cores=cores) {
+                       orthIndiv=TRUE, showProgress=TRUE, cores=1) {
    nrun <- 0
 
   # Initialize J and A matrices
