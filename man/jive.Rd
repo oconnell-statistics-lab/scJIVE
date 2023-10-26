@@ -12,17 +12,17 @@ Given a list of linked data sets, this algorithm will return low-rank matrices o
 \usage{
 jive(data, rankJ = 1, rankA = rep(1, length(data)), method = "perm",
       dnames = names(data), conv = "default", maxiter = 1000, scale = TRUE, center = TRUE,
-      orthIndiv = TRUE, est = TRUE, showProgress=TRUE)
+      orthIndiv = TRUE, est = TRUE, showProgress = TRUE, cores = 1)
 
 jive.iter(data, rankJ = 1, rankA = rep(1, length(data)), conv = 1e-06,
-           maxiter = 1000, orthIndiv = TRUE, showProgress=TRUE)
+           maxiter = 1000, orthIndiv = TRUE, showProgress = TRUE, cores = 1)
 
 jive.perm(data, nperms = 100, alpha = 0.05, est = TRUE, conv = 1e-06, 
-           maxiter = 1000, orthIndiv = TRUE, showProgress=TRUE)
+           maxiter = 1000, orthIndiv = TRUE, showProgress = TRUE, cores = 1)
 
 bic.jive(data, n = unlist(lapply(data, ncol)) * unlist(lapply(data, nrow)),
           d = unlist(lapply(data, nrow)), conv = 1e-06, maxiter = 1000,
-          orthIndiv = TRUE, showProgress=TRUE)
+          orthIndiv = TRUE, showProgress = TRUE, cores = 1)
 }
 \arguments{
   \item{data}{
@@ -60,6 +60,9 @@ A boolean indicating whether or not the data should first be compressed via sing
 }
   \item{showProgress}{
 A boolean indicating whether or not to give output showing the progress of the algorithm. If TRUE, the algorithm will print out updates about the number of iterations the algorithm is taking and the progress of the rank selection method, if applicable.  If FALSE, the algorithms will give no printed output when run.  
+}
+  \item{cores}{
+Number of cores to use when computing matrix multiplication.  
 }
   \item{nperms}{
 A value indicating the number of permutations for rank estimation. Default is 100.
