@@ -13,10 +13,10 @@ Author: Michael J. O'Connell [aut, cre], Donghyung Lee [aut], Eric F. Lock [aut]
 Maintainer: Michael J. O'Connell <oconnemj@miamioh.edu>
 Description: Performs the Joint and Individual Variation Explained (JIVE) decomposition on a list of data sets when the data share a dimension, returning low-rank matrices that capture the joint and individual structure of the data [O'Connell, MJ and Lock, EF (2016) <doi:10.1093/bioinformatics/btw324>]. It provides two methods of rank selection when the rank is unknown, a permutation test and a Bayesian Information Criterion (BIC) selection algorithm. Also included in the package are three plotting functions for visualizing the variance attributed to each data source: a bar plot that shows the percentages of the variability attributable to joint and individual structure, a heatmap that shows the structure of the variability, and principal component plots. 
 License: GPL-3
-Imports: gplots, abind, graphics, stats, Rcpp (>= 1.0.10), RcppEigen
+Imports: gplots, abind, graphics, stats, Rcpp (>= 1.0.10), RcppEigen, RSpectra
 Suggests: knitr, rmarkdown
 Depends: R(>= 4.1.1)
 VignetteBuilder: knitr
-Packaged: 2023-10-19 02:23:02 UTC; Michael
+Packaged: 2023-10-26 04:07:25 UTC; Michael
 NeedsCompilation: no
 LinkingTo: Rcpp, RcppArmadillo, RcppEigen
