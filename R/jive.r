@@ -86,7 +86,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
      if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", 
                              rankJ,", individual ranks:", rankA, "\n") }
      temp <- jive.iter(data, rankJ, rankA, conv=conv, maxiter=maxiter, 
-                       orthIndiv=orthIndiv, showProgress=showProgress, cores=cores)
+                       orthIndiv=orthIndiv, showProgress=showProgress)
      joint <- temp$joint
      individual <- temp$individual
      if (est) {
