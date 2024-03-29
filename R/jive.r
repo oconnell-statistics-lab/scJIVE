@@ -86,7 +86,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
      if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", 
                              rankJ,", individual ranks:", rankA, "\n") }
      temp <- jive.iter(data, rankJ, rankA, conv=conv, maxiter=maxiter, 
-                       orthIndiv=orthIndiv, showProgress=showProgress)
+                       orthIndiv=orthIndiv, showProgress=showProgress, cores=cores)
      joint <- temp$joint
      individual <- temp$individual
      if (est) {
@@ -168,7 +168,8 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
 
 
 # Run one iteration of the JIVE algorithm
-jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001, maxiter=1000, orthIndiv=TRUE, showProgress=TRUE) {
+jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001, 
+                       maxiter=1000, orthIndiv=TRUE, showProgress=TRUE, cores=1) {
    # Get the number of data sets
    l <- length(data)
 
@@ -198,8 +199,8 @@ jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001, 
       # For fixed A, calculate J
       if (rankJ > 0) { # Only change J if rankJ is non-zero
          temp <- Xtot - Atot
-         s <- svdwrapper(temp, nu=rankJ, nv=rankJ)
-         Jtot <- s$u[,1:rankJ] %*% diag(x=s$d[1:rankJ], nrow=rankJ) %*% t(s$v[,1:rankJ])
+         s <- svds(temp, rankJ)
+         Jtot <- eigenMapMatMult2(eigenMapMatMult2(s$u, diag(s$d, nrow = rankJ), n_cores = cores), t(s$v), n_cores = cores)
          V <- s$v[,1:rankJ]
       } else {
          Jtot <- matrix(0, nrow(Xtot), ncol(Xtot))
@@ -219,15 +220,15 @@ jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001, 
       for (i in 1:l) {
          # If rank is 0, set to 0 matrix.  Otherwise, estimate.
          if (rankA[i] > 0) {
-            temp <- (data[[i]] - J[[i]]) %*% (diag(ncol(Xtot)) - V %*% t(V))
+            temp <- eigenMapMatMult2(data[[i]] - J[[i]], diag(ncol(Xtot)) - eigenMapMatMult2(V, t(V), n_cores = cores), n_cores = cores)
             if (orthIndiv & nrun > 0) {
                for (j in (1:l)[-i]) {
-                  temp <- temp %*% (diag(ncol(Xtot)) - Vind[[j]] %*% t(Vind[[j]]))
+                  temp <- eigenMapMatMult2(temp, diag(ncol(Xtot)) - eigenMapMatMult2(Vind[[j]], t(Vind[[j]]), n_cores = cores), n_cores = cores)
                }
             }
-            s <- svdwrapper(temp, nu=rankA[i], nv=rankA[i])
+            s <- svds(temp, rankA[i])
             if (orthIndiv) { Vind[[i]] <- s$v[,1:rankA[i]] }
-            A[[i]] <- s$u[,1:rankA[i]] %*% diag(x=s$d[1:rankA[i]], nrow=rankA[i]) %*% t(s$v[,1:rankA[i]])
+            A[[i]] <- eigenMapMatMult2(eigenMapMatMult2(s$u[, 1:rankA[i]], diag(x = s$d[1:rankA[i]], nrow = rankA[i]), n_cores = cores), t(s$v[, 1:rankA[i]]), n_cores = cores)
          } else {
             A[[i]] <- matrix(0, nrow(data[[i]]), ncol(data[[i]]))
             if (orthIndiv) { Vind[[i]] <- matrix(0,ncol(Xtot),rankA[[i]]) }
@@ -238,11 +239,11 @@ jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001, 
       if (orthIndiv & nrun == 0) {
          for (i in 1:l) {
             for (j in (1:l)[-i]) {
-               A[[i]] <- A[[i]] %*% (diag(ncol(Xtot)) - Vind[[j]] %*% t(Vind[[j]]))
+               A[[i]] <- eigenMapMatMult2(A[[i]], diag(ncol(Xtot)) - eigenMapMatMult2(Vind[[j]], t(Vind[[j]]), n_cores = cores), n_cores = cores)
             }}
          for(i in 1:l){     ########re-estimate the Vind's
             if (rankA[i] > 0) {
-             s <- svdwrapper(A[[i]], nu=rankA[i], nv=rankA[i])
+             s <- svds(A[[i]], rankA[i])
              Vind[[i]] <- s$v[,1:rankA[i]]
             }
          }
@@ -292,7 +293,9 @@ pjsum <- function (dim,rank) {
 }
 
 # Determine ranks with bic
-bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)), d=unlist(lapply(data,nrow)), conv=.000001, maxiter=1000, orthIndiv=TRUE, showProgress=TRUE) {
+bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)), 
+                      d=unlist(lapply(data,nrow)), conv=.000001, maxiter=1000, 
+                      orthIndiv=TRUE, showProgress=TRUE, cores=1) {
    # Get the number of data sets
    l <- length(data)
 
@@ -314,7 +317,7 @@ bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)
    rankJ <- 0
    rankA <- rep(0,l)
    if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", rankJ,", individual ranks:", rankA, "\n") }
-   current <- jive.iter(data, rankJ, rankA, conv, maxiter, orthIndiv, showProgress=showProgress)
+   current <- jive.iter(data, rankJ, rankA, conv, maxiter, orthIndiv, showProgress=showProgress, cores=cores)
     # Calculate BIC
     for (k in 1:length(data)) { sse[k] <- norm(data[[k]] - current$joint[[k]] - current$individual[[k]], type="f")^2 }
     p.jive <- 0
@@ -325,7 +328,7 @@ bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)
       bic.improve <- F
       temp <- list()
       if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", rankJ+1,", individual ranks:", rankA, "\n") }
-      temp[[1]] <- jive.iter(data, rankJ+1, rankA, conv, maxiter, orthIndiv, showProgress=showProgress)
+      temp[[1]] <- jive.iter(data, rankJ+1, rankA, conv, maxiter, orthIndiv, showProgress=showProgress, cores=cores)
        # Calculate BIC
        for (k in 1:length(data)) { sse[k] <- norm(data[[k]] - temp[[1]]$joint[[k]] - temp[[1]]$individual[[k]], type="f")^2 }
        p.jive <- sum(sum(d):(sum(d)-(rankJ+1)+1)) + sum(nc:(nc-(rankJ+1)+1)) + pjsum(d, rankA) + pjsum(rep(nc,length(data))-(rankJ+1), rankA)
@@ -337,7 +340,7 @@ bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)
         tempR[i] <- tempR[i] + 1
         if (tempR[i] < min(n,nrow(data[[i]]))) {
          if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", rankJ,", individual ranks:", tempR, "\n") }
-         temp[[i+1]] <- jive.iter(data, rankJ, tempR, conv, maxiter, orthIndiv, showProgress=showProgress)
+         temp[[i+1]] <- jive.iter(data, rankJ, tempR, conv, maxiter, orthIndiv, showProgress=showProgress, cores=cores)
           # Calculate BIC
           for (k in 1:length(data)) { sse[k] <- norm(data[[k]] - temp[[i+1]]$joint[[k]] - temp[[i+1]]$individual[[k]], type="f")^2 }
           p.jive <- ifelse(rankJ==0,0,sum(sum(d):(sum(d)-rankJ+1)) + sum(nc:(nc-rankJ+1))) + pjsum(d, tempR) + pjsum(rep(nc,length(data))-rankJ, tempR)
@@ -365,14 +368,9 @@ bic.jive <- function (data, n=unlist(lapply(data,ncol))*unlist(lapply(data,nrow)
 
 
 # Determine ranks by a permutation test
-jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, maxiter=1000, orthIndiv=TRUE, showProgress=TRUE) {
+jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, maxiter=1000,
+                       orthIndiv=TRUE, showProgress=TRUE, cores=1) {
    nrun <- 0
-
-   # Find breaks between data scources
-   #d_red <- c()
-   #for (i in 1:length(data)) { d_red[i] <- nrow(data[[i]]) }
-   #dlow <- c(1, cumsum(d_red)[-length(data)]+1)
-   #dhi <- cumsum(d_red)
 
   # Initialize J and A matrices
   Jperp <- list()
@@ -399,7 +397,7 @@ jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, ma
     full[[i]] <- data[[i]] - Aperp[[i]]
    }
    n <- ncol(full[[1]])
-   actual <- svdwrapper(do.call(rbind,full),nu=0,nv=0)$d
+   actual <- eigenBDCSVD(do.call(rbind, full), n_cores = 8)$d
    # Each row of perms will be the singular values of a single permutation
    # The ith column of perms will be the ith singular value from all permutations
    perms <- matrix(NA, nperms, min(n,sum(unlist(lapply(data,nrow)))))
@@ -408,7 +406,7 @@ jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, ma
       for (j in 1:length(data)) {
          temp[[j]] <- full[[j]][, sample(1:n, n, replace=F)]
       }
-      perms[i,] <- svdwrapper(do.call(rbind, temp),nu=0,nv=0)$d
+      perms[i,] <- eigenBDCSVD(do.call(rbind, temp), n_cores = cores)$d
    }
    rankJ <- 0
    for (i in 1:n) {
@@ -426,14 +424,14 @@ jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, ma
    rankA <- c()
    for (i in 1:length(data)) {
       ind <- data[[i]] - Jperp[[i]]
-      actual <- svdwrapper(ind,nu=0,nv=0)$d
+      actual <- eigenBDCSVD(ind, n_cores = cores)$d
       perms <- matrix(NA, nperms, min(n,nrow(data[[i]])))
       for (k in 1:nperms) {
          perm <- t(ind)
          pind <- order(c(col(perm)), runif(length(perm))) 
          perm <- matrix(perm[pind], nrow=nrow(ind), ncol=n, byrow=TRUE)
 
-         perms[k,] <- svdwrapper(perm,nu=0,nv=0)$d
+         perms[k,] <- eigenBDCSVD(perm, n_cores = cores)$d
       }
       rankA[i] <- 0
       for (j in 1:n) {
@@ -452,7 +450,7 @@ jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, ma
       u <- list()
       for(i in 1:length(data)) {
          if(nrow(data[[i]]) > ncol(data[[i]])) {
-            temp <- svdwrapper(data[[i]], nu=ncol(data[[i]]), nv=ncol(data[[i]]))
+            temp <- svds(data[[i]], k = ncol(data[[i]]))
             dataR[[i]] <- diag(x=temp$d[1:ncol(data[[1]])], nrow=ncol(data[[1]])) %*% t(temp$v[,1:ncol(data[[1]])])
             u[[i]] <- temp$u
          } else {
@@ -465,7 +463,8 @@ jive.perm <- function (data, nperms=100, alpha=0.05, est=TRUE, conv=0.000001, ma
       dataR <- data
    }
    if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", rankJ,", individual ranks:", rankA, "\n") }
-   tempjive <- jive.iter(dataR, rankJ, rankA, conv=conv, maxiter=maxiter, orthIndiv=orthIndiv, showProgress=showProgress)
+   tempjive <- jive.iter(dataR, rankJ, rankA, conv=conv, maxiter=maxiter, 
+                         orthIndiv=orthIndiv, showProgress=showProgress, cores = cores)
    Jperp=tempjive$joint
    Aperp=tempjive$individual
    if (est) {
@@ -531,21 +530,6 @@ plot.jive <- function (x, type="var", ...) {
    if ("pca" %in% type) {
       showPCA(x,...)
    }
-}
-
-svdwrapper = function( x, nu, nv, verbose=F ){
-  # workaround by Art Owen to avoid LAPACK errors
-  # See https://stat.ethz.ch/pipermail/r-help/2007-October/143508.html  
-  gotit = F
-  try( {svdx = svd(x,nu,nv); gotit=T}, silent = !verbose )
-  if( gotit )return(svdx)
-  try( {svdtx = svd(t(x),nv,nu); gotit=T}, silent = !verbose )
-  if( !gotit )stop("Error: svd(x) and svd(t(x)) both failed to converge.")
-#  if( verbose )print("svd(x) failed but svd(t(x)) worked.")
-  temp    = svdtx$u
-  svdtx$u = svdtx$v
-  svdtx$v = temp
-  svdtx
 }
 
 #function SVDmiss
