@@ -582,6 +582,3 @@ SVDmiss <- function(X, niter=25, ncomp=min(4,dim(X)[2]), conv.reldiff=0.001)
   return(list(svd=svd0, Xfill=XF, status=final.diff))
 }
 
-
-
-

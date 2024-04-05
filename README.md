@@ -4,7 +4,7 @@
   
 ## Citing scJIVE
   
-Hastings, Lee and O'Connell. Batch-effect correction in single-cell RNA sequencing data using JIVE. [bioRxiv]().
+Hastings, Lee and O'Connell. Batch-effect correction in single-cell RNA sequencing data using JIVE. [bioRxiv](https://www.biorxiv.org/content/10.1101/2023.10.25.563973v1).
 
 ## Authors
 
