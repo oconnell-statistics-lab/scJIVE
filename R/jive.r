@@ -18,9 +18,9 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
 
    # Impute missing values using SVDmiss
    cat("Preprocessing: Performing Initial SVD for", l, "datasets\n")
-   tic("Initial SVD")
+   timeT <- Sys.time()
    for (i in 1:l) {
-     tic(paste0("  SVD ", i))
+     timeI <- Sys.time()
      
      if (anyNA(data[[i]])) {
        temp <- SVDmiss(data[[i]], ncomp = min(ncol(data[[i]]), nrow(data[[i]])))[[1]]
@@ -29,9 +29,9 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
      }
      data[[i]] <- eigenMapMatMult2(eigenMapMatMult2(temp$u, diag(x = temp$d), n_cores = cores), 
                                    t(temp$v), n_cores = cores)
-     toc(quiet = !showProgress)
+     cat("  SVD ", i, ": ", Sys.time() - timeI, "\n")
    }
-   toc(quiet = !showProgress)
+   cat("Initial SVD: ", Sys.time() - timeT, "\n")
    cat("----------------------------------------------\n")
 
    # Center and scale individual data sets by frobenius norm
@@ -65,10 +65,8 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
      # Reduce matrix to speed computations
      if (est) {
        cat("Performing compression via SVD\n")
-       tic("Compressing data")
          u <- list()
          for(i in 1:l) {
-          tic(paste0("  Compression ", i))
           if(nrow(data[[i]]) > ncol(data[[i]])) {
             temp <- eigenBDCSVD(data[[i]], n_cores = cores)
             data[[i]] <- eigenMapMatMult2(diag(x = temp$d[1:ncol(data[[1]])], nrow = ncol(data[[1]])), 
@@ -78,9 +76,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
             # Set u[[i]] to identity matrix
             u[[i]] <- diag(1, nrow(data[[i]]))
           }
-          toc(quiet = !showProgress)
        }
-       toc(quiet = !showProgress)
        cat("----------------------------------------------\n")
      }
      if (showProgress) { cat("Running JIVE algorithm for ranks:\njoint rank:", 
@@ -106,10 +102,8 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
       # Compress matrix to speed computations
       if (est) {
         cat("Performing compression via SVD\n")
-        tic("Compressing data")
         u <- list()
         for(i in 1:l) {
-          tic(paste0("  Compression ", i))
           if(nrow(data[[i]]) > ncol(data[[i]])) {
             temp <- svds(data[[i]], k = ncol(data[[i]]))
             data[[i]] <- eigenMapMatMult2(diag(x = temp$d[1:ncol(data[[1]])], nrow = ncol(data[[1]])),
@@ -119,9 +113,7 @@ jive <- function (data, rankJ = 1, rankA = rep(1, length(data)), method = "perm"
             # Set u[[i]] to identity matrix
             u[[i]] <- diag(1, nrow(data[[i]]))
           }
-          toc(quiet = !showProgress)
         }
-      toc(quiet = !showProgress)
       }
       cat("----------------------------------------------\n")
       
@@ -191,9 +183,9 @@ jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001,
 
    # Iterate to find A and J
    while (nrun < maxiter & !converged) {
-      # Store previous iteration
-      Jlast <- Jtot
-      Alast <- Atot
+     # Store previous iteration
+     Jlast <- Jtot
+     Alast <- Atot
 
      timeJ <- system.time({
       # For fixed A, calculate J
@@ -254,6 +246,7 @@ jive.iter <- function (data, rankJ=1, rankA=rep(1,length(data)), conv=0.000001,
       if (norm(Jtot - Jlast, type="f") <= conv & norm(Atot - Alast, type="f") <= conv) {
          converged <- T
       }
+      cat(paste0("Iteration ", nrun, ": Joint ", timeJ[3], " seconds", "Indiv: ", timeA[3]," seconds\n"))
       nrun = nrun + 1
    }
 
@@ -532,6 +525,7 @@ plot.jive <- function (x, type="var", ...) {
    }
 }
 
+
 #function SVDmiss
 #from R package SpatioTemporal: https://cran.r-project.org/src/contrib/Archive/SpatioTemporal/
 #Authors: Paul D. Sampson and Johan Lindstrom
@@ -587,7 +581,4 @@ SVDmiss <- function(X, niter=25, ncomp=min(4,dim(X)[2]), conv.reldiff=0.001)
   names(final.diff) <- c("diff","rel.diff","n.iter","max.iter")
   return(list(svd=svd0, Xfill=XF, status=final.diff))
 }
-
-
-
 
